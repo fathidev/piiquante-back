@@ -29,7 +29,7 @@ function createSauce(req, res) {
   console.log({ body: req.body.sauce });
   console.log({ file: req.file });
   const imageUrl = req.file.destination + req.file.filename;
-  console.log()
+  console.log(imageUrl);
   const sauce = new Sauce({
     userId: userId,
     name: name,
