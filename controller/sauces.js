@@ -26,9 +26,8 @@ function createSauce(req, res) {
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
   console.log("dans la creation des sauces");
-  console.log({ body: req.body.sauce });
-  console.log({ file: req.file });
-  const imageUrl = req.file.destination + req.file.filename;
+  const imageUrl =
+    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
   console.log(imageUrl);
   const sauce = new Sauce({
     userId: userId,
@@ -47,6 +46,7 @@ function createSauce(req, res) {
     .save()
     .then((res) => console.log("product enregistré", res))
     .catch(console.error);
+  return res.status(201).send({ message: "sauce enregistrée dans la DB" });
 }
 
 // Sauce.deleteMany({}).then(() =>
