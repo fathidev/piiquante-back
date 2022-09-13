@@ -1,2 +1,5 @@
-GET http://localhost:4200/sauces
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MzFjNTFmNTFiYWZiMmJhNzc3ZmJmNTAiLCJpYXQiOjE2NjI4MDQwMDV9.fTv0TfxBYsCTuU6yPQlyWYH3yFolkI5dHR6wNTIppuo
+POST http://localhost:3000/api/auth/signup
+Content-Type: application/json
+Accept: application/json
+
+{"email":"qssjjjjjjqqsqqqqqsqqq@gmail.com", "password":""}

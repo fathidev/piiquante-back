@@ -4,21 +4,30 @@ const jwt = require("jsonwebtoken");
 
 async function createUser(req, res) {
   const { email, password } = req.body;
+  if (email == "" || password == "") {
+    return res
+      .status(203)
+      .send({ message: "password or email cant' be empty" });
+  }
   const hashedPassword = await hashPassword(password);
   const user = new User({ email, password: hashedPassword });
-  try {
-    await user.save();
-    res.status(201).send({ message: "user enregistré dans la database" });
-  } catch (err) {
-    res
-      .status(409)
-      .send({ message: "user non enregistré dans la database : " + err });
-  }
+  saveUserInDatabase(user, res);
 }
 
-function hashPassword(password) {
+// hashage du mot de passe
+async function hashPassword(password) {
   const saltRounds = 10;
   return bcrypt.hash(password, saltRounds);
+}
+
+// enregistrement du nouvel utilisateur dans la DB
+async function saveUserInDatabase(user, res) {
+  try {
+    await user.save();
+    res.status(201).send({ message: "user save in database" });
+  } catch (err) {
+    res.status(409).send({ message: "user not save in database: " + err });
+  }
 }
 
 async function logUser(req, res) {
