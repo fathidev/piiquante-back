@@ -28,7 +28,6 @@ function createSauce(req, res) {
   console.log("dans la creation des sauces");
   const imageUrl =
     process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
-  console.log(imageUrl);
   const sauce = new Sauce({
     userId: userId,
     name: name,

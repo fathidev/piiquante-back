@@ -10,7 +10,7 @@ const uri = `mongodb+srv://${login}:${password}@cluster0.rnu2lb8.mongodb.net/${d
 mongoose
   .connect(uri)
   .then(() => console.log("connected to mango!"))
-  .catch((err) => console.error("Error connecting to Mongo", error));
+  .catch((err) => console.error("Error connecting to Mongo", err));
 
 // moule userschema
 const userSchema = new mongoose.Schema({
