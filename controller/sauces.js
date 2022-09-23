@@ -19,7 +19,7 @@ const Sauce = mongoose.model("Sauce", sauceSchema);
 
 function getSauces(req, res) {
   Sauce.find({})
-    .then((sauces) => res.send(sauces).status(200))
+    .then((sauces) => res.status(200).send(sauces))
     .catch((error) => res.status(500).send(error));
 }
 
@@ -91,7 +91,16 @@ function modifySauce(req, res) {
 
   Sauce.findByIdAndUpdate(id, payLoad)
     .then((dataBaseResponse) => sendResponseToClient(dataBaseResponse, res))
+    .then((sauce) => deteleImage(sauce))
     .catch((err) => console.error("NOT CONNECTED TO DB", err));
+}
+
+function deteleImage(sauce) {
+  if (sauce == null) return;
+  const imageToDelete = sauce.imageUrl.split("/").at(-1);
+  unlink(`public/images/${imageToDelete}`)
+    .then((res) => console.log("Image deleted"))
+    .catch((err) => console.error("Image not deleted : ", err));
 }
 
 function makePayload(hasNewImage, req) {
@@ -108,7 +117,9 @@ function sendResponseToClient(sauce, res) {
     return res.status(404).send({ message: "object not found in database" });
   }
   console.log("successfull : object update is database");
-  res.status(200).send({ message: "successfull : object update in database" });
+  return Promise.resolve(
+    res.status(200).send({ message: "successfull : object update in database" })
+  ).then(() => sauce);
 }
 
 // Sauce.deleteMany({}).then(() =>
