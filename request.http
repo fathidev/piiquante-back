@@ -2,4 +2,4 @@ POST http://localhost:3000/api/auth/signup
 Content-Type: application/json
 Accept: application/json
 
-{"email":"iojqqq@gmail.com", "password":"cccccccccccc"}
+{"email":"test333sqqqqqss222@gmail.com", "password":""}

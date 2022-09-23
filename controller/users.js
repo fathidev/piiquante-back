@@ -2,12 +2,13 @@ const { User } = require("../mongo");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+// creation du user
 async function createUser(req, res) {
   const { email, password } = req.body;
   if (email == "" || password == "") {
     return res
       .status(203)
-      .send({ message: "password or email cant' be empty" });
+      .send({ message: "password or email can not be empty" });
   }
   const hashedPassword = await hashPassword(password);
   const user = new User({ email, password: hashedPassword });
@@ -26,10 +27,11 @@ async function saveUserInDatabase(user, res) {
     await user.save();
     res.status(201).send({ message: "user save in database" });
   } catch (err) {
-    res.status(409).send({ message: "user not save in database: " + err });
+    res.status(409).send({ message: "user not save in database : " + err });
   }
 }
 
+// identification du user
 async function logUser(req, res) {
   const { email, password } = req.body;
   const userFromDb = await User.findOne({ email: email }).exec();

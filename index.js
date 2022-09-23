@@ -10,7 +10,13 @@ const path = require("path");
 
 // controllers
 const { createUser, logUser } = require("./controller/users");
-const { getSauces, createSauce } = require("./controller/sauces");
+const {
+  getSauces,
+  createSauce,
+  getSauceById,
+  deleteSauce,
+  modifySauce,
+} = require("./controller/sauces");
 
 // connect to database
 require("./mongo");
@@ -30,12 +36,14 @@ app.use("/public/images/", express.static("public/images"));
 const { authentificationUser } = require("./middleware/auth");
 
 const multer = require("multer");
+const { application } = require("express");
 const storage = multer.diskStorage({
   destination: "public/images/",
   filename: makeFileName,
 });
 const upload = multer({ storage: storage });
 
+// fabrication du nom de l'image
 function makeFileName(req, file, cb) {
   cb(null, Date.now() + "-" + file.originalname);
 }
@@ -49,6 +57,13 @@ app.post(
   upload.single("image"),
   createSauce
 );
-
+app.get("/api/sauces/:id", authentificationUser, getSauceById);
+app.delete("/api/sauces/:id", authentificationUser, deleteSauce);
+app.put(
+  "/api/sauces/:id",
+  authentificationUser,
+  upload.single("image"),
+  modifySauce
+);
 // écouter le port 3000
 app.listen(PORT, () => console.log(`Listening on port : ${PORT}`));

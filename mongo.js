@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 const isEmailValidator = require("validator").isEmail;
-const isLenghtValidator = require("validator").isLength;
+// const isLenghtValidator = require("validator").isLength;
 
 const login = process.env.DB_LOGIN,
   password = process.env.DB_PASSWORD,
@@ -15,7 +15,6 @@ mongoose
   .catch((err) => console.error("Error connecting to Mongo", err));
 
 // moule userschema
-
 const userSchema = new mongoose.Schema({
   email: {
     type: String,
@@ -25,14 +24,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, "invalid password"],
+    required: [true, "can't be blank"],
   },
 });
 
-// function isPasswordRequired() {
-//   console.log(this.password);
-//   return typeof this.password === "string" ? false : true;
-// }
 // application d'un plugin à userSchema qui permet de s'assurer que l'utilisateur est unique
 userSchema.plugin(uniqueValidator);
 
