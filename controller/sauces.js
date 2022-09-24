@@ -23,6 +23,7 @@ function getSauces(req, res) {
     .catch((error) => res.status(500).send(error));
 }
 
+// récupérer une sauce précise par l'id
 async function getSauceById(req, res) {
   try {
     const id = req.params.id;
@@ -42,6 +43,7 @@ function deleteSauce(req, res) {
       res.status(500).send({ message: "sauce not deleted from database", err })
     );
 }
+// supprimer l'image d'une sauce
 function deleteImageSauce(sauce) {
   const { imageUrl } = sauce;
   const imageToDelete = imageUrl.split("/").at(-1);
@@ -95,21 +97,6 @@ function modifySauce(req, res) {
     .catch((err) => console.error("NOT CONNECTED TO DB", err));
 }
 
-function deteleImage(sauce) {
-  if (sauce == null) return;
-  const imageToDelete = sauce.imageUrl.split("/").at(-1);
-  unlink(`public/images/${imageToDelete}`)
-    .then((res) => console.log("Image deleted"))
-    .catch((err) => console.error("Image not deleted : ", err));
-}
-
-function makePayload(hasNewImage, req) {
-  if (!hasNewImage) return req.body;
-  const payLoad = JSON.parse(req.body.sauce);
-  payLoad.imageUrl =
-    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
-  return payLoad;
-}
 // envoyer la réponse au client
 function sendResponseToClient(sauce, res) {
   if (sauce === null) {
@@ -120,6 +107,23 @@ function sendResponseToClient(sauce, res) {
   return Promise.resolve(
     res.status(200).send({ message: "successfull : object update in database" })
   ).then(() => sauce);
+}
+
+//  fabrication du payLoad
+function makePayload(hasNewImage, req) {
+  if (!hasNewImage) return req.body;
+  const payLoad = JSON.parse(req.body.sauce);
+  payLoad.imageUrl =
+    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
+  return payLoad;
+}
+// supprimer l'ancienne image après avoir modifié la fiche sauce
+function deteleImage(sauce) {
+  if (sauce == null) return;
+  const imageToDelete = sauce.imageUrl.split("/").at(-1);
+  unlink(`public/images/${imageToDelete}`)
+    .then(() => console.log("Image deleted"))
+    .catch((err) => console.error("Image not deleted : ", err));
 }
 
 // Sauce.deleteMany({}).then(() =>

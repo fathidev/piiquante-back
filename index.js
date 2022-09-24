@@ -36,7 +36,6 @@ app.use("/public/images/", express.static("public/images"));
 const { authentificationUser } = require("./middleware/auth");
 
 const multer = require("multer");
-const { application } = require("express");
 const storage = multer.diskStorage({
   destination: "public/images/",
   filename: makeFileName,
