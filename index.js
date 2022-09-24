@@ -16,6 +16,7 @@ const {
   getSauceById,
   deleteSauce,
   modifySauce,
+  likeSauce,
 } = require("./controller/sauces");
 
 // connect to database
@@ -64,5 +65,7 @@ app.put(
   upload.single("image"),
   modifySauce
 );
+app.post("/api/sauces/:id/like", authentificationUser, likeSauce);
+
 // écouter le port 3000
 app.listen(PORT, () => console.log(`Listening on port : ${PORT}`));

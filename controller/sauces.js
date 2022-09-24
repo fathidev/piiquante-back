@@ -26,11 +26,20 @@ function getSauces(req, res) {
 // récupérer une sauce précise par l'id
 async function getSauceById(req, res) {
   try {
-    const id = req.params.id;
-    const sauce = await Sauce.findById(id);
+    const sauce = await getSauce(req);
     res.send(sauce).status(200);
   } catch (error) {
     res.status(500).send(error);
+  }
+}
+
+async function getSauce(req) {
+  try {
+    const id = req.params.id;
+    const sauce = await Sauce.findById(id);
+    return sauce;
+  } catch (error) {
+    console.error(error);
   }
 }
 // supprimer une sauce
@@ -97,6 +106,65 @@ function modifySauce(req, res) {
     .catch((err) => console.error("NOT CONNECTED TO DB", err));
 }
 
+//  like & dislike
+async function likeSauce(req, res) {
+  const like = req.body.like;
+  const userId = req.body.userId;
+  // like != 0 && like != 1 && like != -1
+  if (![-1, 0, 1].includes(like)) {
+    return res.status(403).send({ message: "like value invalid" });
+  }
+
+  const sauce = await getSauce(req);
+  if (sauce == null)
+    return res.status(404).send({ message: "sauce not found" });
+  const hasUserAlreadyLiked = sauce.usersLiked.includes(userId);
+  const hasUserAlreadyDisLiked = sauce.usersDisliked.includes(userId);
+
+  if (like === 1) {
+    if (hasUserAlreadyDisLiked)
+      return res
+        .status(403)
+        .send({ message: "can't like & dislike in the same time" });
+    if (hasUserAlreadyLiked) {
+      return res.status(404).send({ message: "user has already liked" });
+    }
+    sauce.likes++;
+    sauce.usersLiked.push(userId);
+    sauce.save();
+    res.status(200).send(sauce);
+  }
+  if (like === -1) {
+    if (hasUserAlreadyLiked)
+      return res
+        .status(403)
+        .send({ message: "can't like & dislike in the same time" });
+
+    if (hasUserAlreadyDisLiked) {
+      return res.status(404).send({ message: "user has already disliked" });
+    }
+    sauce.dislikes++;
+    sauce.usersDisliked.push(userId);
+    sauce.save();
+    res.status(200).send(sauce);
+  }
+
+  if (like === 0) {
+    if (hasUserAlreadyDisLiked) {
+      sauce.dislikes--;
+      const arrayWithoutUser = sauce.usersDisliked.filter((id) => id != userId);
+      sauce.usersDisliked = arrayWithoutUser;
+    }
+    if (hasUserAlreadyLiked) {
+      sauce.likes--;
+      const arrayWithoutUser = sauce.usersLiked.filter((id) => id != userId);
+      sauce.usersLiked = arrayWithoutUser;
+    }
+    sauce.save();
+    res.status(200).send(sauce);
+  }
+}
+
 // envoyer la réponse au client
 function sendResponseToClient(sauce, res) {
   if (sauce === null) {
@@ -136,4 +204,5 @@ module.exports = {
   getSauceById,
   deleteSauce,
   modifySauce,
+  likeSauce,
 };
