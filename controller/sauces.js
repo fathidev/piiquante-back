@@ -27,9 +27,9 @@ function getSauces(req, res) {
 async function getSauceById(req, res) {
   try {
     const sauce = await getSauce(req);
-    res.send(sauce).status(200);
+    return res.send(sauce).status(200);
   } catch (error) {
-    res.status(500).send(error);
+    return res.status(500).send(error);
   }
 }
 
@@ -42,15 +42,18 @@ async function getSauce(req) {
     console.error(error);
   }
 }
+
 // supprimer une sauce
-function deleteSauce(req, res) {
+async function deleteSauce(req, res) {
   const { id } = req.params;
-  Sauce.findByIdAndDelete(id)
-    .then(deleteImageSauce)
-    .then((sauce) => sendResponseToClient(sauce, res))
-    .catch((err) =>
-      res.status(500).send({ message: "sauce not deleted from database", err })
-    );
+  try {
+    const sauce = await Sauce.findByIdAndDelete(id);
+    await deleteImageSauce(sauce);
+    sendResponseToClient(sauce, res);
+    return sauce;
+  } catch (err) {
+    res.status(500).send({ message: "sauce not deleted from database", err });
+  }
 }
 // supprimer l'image d'une sauce
 function deleteImageSauce(sauce) {

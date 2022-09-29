@@ -1,8 +1,7 @@
 // database
 const mongoose = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
-const isEmailValidator = require("validator").isEmail;
-// const isLenghtValidator = require("validator").isLength;
+const { isEmail: isEmailValidator } = require("validator");
 
 const login = process.env.DB_LOGIN,
   password = process.env.DB_PASSWORD,
