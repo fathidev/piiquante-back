@@ -40,6 +40,7 @@ async function logUser(req, res) {
   const isPasswordCorrect = await bcrypt.compare(password, correctHash);
   if (!isPasswordCorrect) return sendError(res);
   const userId = userFromDb._id;
+  if (userId == null) return sendError(res);
   const token = jwt.sign({ userId }, process.env.TOKEN_SECRET, {
     expiresIn: "24h",
   });

@@ -101,12 +101,24 @@ function createSauce(req, res) {
 function modifySauce(req, res) {
   const { id } = req.params;
   const hasNewImage = req.file != null;
+  console.log("hasNewImage : ", hasNewImage);
   const payLoad = makePayload(hasNewImage, req);
 
   Sauce.findByIdAndUpdate(id, payLoad)
     .then((dataBaseResponse) => sendResponseToClient(dataBaseResponse, res))
     .then((sauce) => deteleImage(sauce))
     .catch((err) => console.error("NOT CONNECTED TO DB", err));
+}
+
+ 
+
+//  fabrication du payLoad
+function makePayload(hasNewImage, req) {
+  if (!hasNewImage) return req.body;
+  const payLoad = JSON.parse(req.body.sauce);
+  payLoad.imageUrl =
+    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
+  return payLoad;
 }
 
 //  like & dislike
@@ -180,17 +192,9 @@ function sendResponseToClient(sauce, res) {
   ).then(() => sauce);
 }
 
-//  fabrication du payLoad
-function makePayload(hasNewImage, req) {
-  if (!hasNewImage) return req.body;
-  const payLoad = JSON.parse(req.body.sauce);
-  payLoad.imageUrl =
-    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
-  return payLoad;
-}
 // supprimer l'ancienne image après avoir modifié la fiche sauce
 function deteleImage(sauce) {
-  if (sauce == null) return;
+  if (sauce === null) return;
   const imageToDelete = sauce.imageUrl.split("/").at(-1);
   unlink(`public/images/${imageToDelete}`)
     .then(() => console.log("Image deleted"))
