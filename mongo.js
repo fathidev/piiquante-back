@@ -10,7 +10,7 @@ const uri = `mongodb+srv://${login}:${password}@cluster0.rnu2lb8.mongodb.net/${d
 
 mongoose
   .connect(uri)
-  .then(() => console.log("connected to mango!"))
+  .then(() => console.log("Connected to mango!"))
   .catch((err) => console.error("Error connecting to Mongo", err));
 
 // moule userschema
@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
 // application d'un plugin à userSchema qui permet de s'assurer que l'utilisateur est unique
 userSchema.plugin(uniqueValidator);
 
-// objet user qui invoque le modele userschema
+// objet User qui invoque le modele userschema
 const User = mongoose.model("User", userSchema);
 
 module.exports = { mongoose, User };

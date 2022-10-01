@@ -51,6 +51,6 @@ function sendError(res) {
   res.status(401).send({ message: "wrong credentials" });
 }
 
-// User.deleteMany({}).then(() => console.log("delete all ok"));
+// User.deleteMany({}).then(() => console.log("delete all users is ok"));
 
 module.exports = { createUser, logUser };

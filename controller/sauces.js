@@ -39,7 +39,7 @@ async function getSauce(req) {
     const sauce = await Sauce.findById(id);
     return sauce;
   } catch (error) {
-    console.error(error);
+    return res.status(500).send(error);
   }
 }
 
@@ -101,7 +101,6 @@ function createSauce(req, res) {
 function modifySauce(req, res) {
   const { id } = req.params;
   const hasNewImage = req.file != null;
-  console.log("hasNewImage : ", hasNewImage);
   const payLoad = makePayload(hasNewImage, req);
 
   Sauce.findByIdAndUpdate(id, payLoad)
@@ -109,8 +108,6 @@ function modifySauce(req, res) {
     .then((sauce) => deteleImage(sauce))
     .catch((err) => console.error("NOT CONNECTED TO DB", err));
 }
-
- 
 
 //  fabrication du payLoad
 function makePayload(hasNewImage, req) {
@@ -186,7 +183,6 @@ function sendResponseToClient(sauce, res) {
     console.log("object not found in database");
     return res.status(404).send({ message: "object not found in database" });
   }
-  console.log("successfull : object update is database");
   return Promise.resolve(
     res.status(200).send({ message: "successfull : object update in database" })
   ).then(() => sauce);
