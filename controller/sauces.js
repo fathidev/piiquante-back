@@ -69,6 +69,11 @@ function createSauce(req, res) {
   const sauceReq = JSON.parse(req.body.sauce);
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
+  const extension = req.file.originalname.split(".").at(-1);
+  const isImageValid = ["jpg", "jpeg", "png", "gif"].includes(extension);
+  if (!isImageValid) {
+    return res.status(400).send({ message: "image format not valid" });
+  }
   const imageUrl =
     process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
   const sauce = new Sauce({
@@ -122,7 +127,7 @@ function makePayload(hasNewImage, req) {
 async function likeSauce(req, res) {
   const like = req.body.like;
   const userId = req.body.userId;
-  // like != 0 && like != 1 && like != -1
+  // like != 0 or like != 1 or  like != -1
   if (![-1, 0, 1].includes(like)) {
     return res.status(403).send({ message: "like value invalid" });
   }
