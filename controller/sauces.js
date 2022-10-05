@@ -59,6 +59,7 @@ async function deleteSauce(req, res) {
 function deleteImageSauce(sauce) {
   const { imageUrl } = sauce;
   const imageToDelete = imageUrl.split("/").at(-1);
+  console.log("imageToDelete : ", imageToDelete);
   // retourne la promesse de unlink qui est censée supprimer l'image
   // envoie la sauce au lieu de undefined prévu nativement grâce au .then(() => sauce)
   return unlink(`public/images/${imageToDelete}`).then(() => sauce);
@@ -66,52 +67,56 @@ function deleteImageSauce(sauce) {
 
 // créer une sauce
 function createSauce(req, res) {
+  const isDatasSauceIsGood = isDatasSauceValid(req, res);
   const sauceReq = JSON.parse(req.body.sauce);
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
-  const extension = req.file.originalname.split(".").at(-1);
-  const isImageValid = ["jpg", "jpeg", "png", "gif"].includes(extension);
-  if (!isImageValid) {
-    return res.status(400).send({ message: "image format not valid" });
+
+  if (isDatasSauceIsGood) {
+    const imageUrl =
+      process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
+    const sauce = new Sauce({
+      userId: userId,
+      name: name,
+      manufacturer: manufacturer,
+      description: description,
+      mainPepper: mainPepper,
+      imageUrl: imageUrl,
+      heat: heat,
+      likes: 0,
+      dislikes: 0,
+      usersLiked: [],
+      usersDisliked: [],
+    });
+    sauce
+      .save()
+      .then((sauce) =>
+        res
+          .status(200)
+          .send({ message: "sauce registred in the database", sauce })
+      )
+      .catch((error) =>
+        res
+          .status(500)
+          .send({ message: "sauce not registered in the database", error })
+      );
+  } else {
+    res.status(400).send({ message: "data for create sauce is not valid" });
   }
-  const imageUrl =
-    process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
-  const sauce = new Sauce({
-    userId: userId,
-    name: name,
-    manufacturer: manufacturer,
-    description: description,
-    mainPepper: mainPepper,
-    imageUrl: imageUrl,
-    heat: heat,
-    likes: 0,
-    dislikes: 0,
-    usersLiked: [],
-    usersDisliked: [],
-  });
-  sauce
-    .save()
-    .then((sauce) =>
-      res
-        .status(200)
-        .send({ message: "sauce registred in the database", sauce })
-    )
-    .catch((error) =>
-      res
-        .status(500)
-        .send({ message: "sauce not registered in the database", error })
-    );
 }
 // modifier une sauce
 function modifySauce(req, res) {
-  const { id } = req.params;
-  const hasNewImage = req.file != null;
-  const payLoad = makePayload(hasNewImage, req);
-
-  Sauce.findByIdAndUpdate(id, payLoad)
-    .then((dataBaseResponse) => sendResponseToClient(dataBaseResponse, res))
-    .then((sauce) => deteleImage(sauce))
-    .catch((err) => console.error("NOT CONNECTED TO DB", err));
+  const isDatasSauceIsGood = isDatasSauceValid(req, res);
+  if (isDatasSauceIsGood) {
+    const { id } = req.params;
+    const hasNewImage = req.file != null;
+    const payLoad = makePayload(hasNewImage, req);
+    Sauce.findByIdAndUpdate(id, payLoad)
+      .then((sauce) => sendResponseToClient(sauce, res))
+      .then((sauce) => deteleImage(sauce))
+      .catch((err) => res.status(500).send(err));
+  } else
+    res.status(400).send({ message: "data for update sauce is not valid" });
 }
 
 //  fabrication du payLoad
@@ -121,6 +126,28 @@ function makePayload(hasNewImage, req) {
   payLoad.imageUrl =
     process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
   return payLoad;
+}
+
+function isDatasSauceValid(req, res) {
+  const sauceReq = JSON.parse(req.body.sauce);
+  const { name, manufacturer, description, mainPepper, heat, userId } =
+    sauceReq;
+  const isNameValid = name.length > 0;
+  const isManufacturerValid = manufacturer.length > 0;
+  const isDescriptionValid = description.length > 0;
+  const isMainPepperValid = mainPepper.length > 0;
+  const isHeatValid = heat > 0;
+  const isUserIdValid = userId.length == 24;
+  if (
+    isNameValid &&
+    isManufacturerValid &&
+    isDescriptionValid &&
+    isMainPepperValid &&
+    isHeatValid &&
+    isUserIdValid
+  )
+    return true;
+  return false;
 }
 
 //  like & dislike
@@ -198,7 +225,7 @@ function deteleImage(sauce) {
   if (sauce === null) return;
   const imageToDelete = sauce.imageUrl.split("/").at(-1);
   unlink(`public/images/${imageToDelete}`)
-    .then(() => console.log("Image deleted"))
+    .then(() => console.log("Image deleted : ", imageToDelete))
     .catch((err) => console.error("Image not deleted : ", err));
 }
 
