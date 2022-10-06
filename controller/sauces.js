@@ -17,6 +17,7 @@ const sauceSchema = new mongoose.Schema({
 
 const Sauce = mongoose.model("Sauce", sauceSchema);
 
+// récupérer toutes les sauces
 function getSauces(req, res) {
   Sauce.find({})
     .then((sauces) => res.status(200).send(sauces))
@@ -67,7 +68,7 @@ function deleteImageSauce(sauce) {
 
 // créer une sauce
 function createSauce(req, res) {
-  const isDatasSauceIsGood = isDatasSauceValid(req, res);
+  const isDatasSauceIsGood = isDatasSauceValid(req);
   const sauceReq = JSON.parse(req.body.sauce);
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
@@ -106,7 +107,7 @@ function createSauce(req, res) {
 }
 // modifier une sauce
 function modifySauce(req, res) {
-  const isDatasSauceIsGood = isDatasSauceValid(req, res);
+  const isDatasSauceIsGood = isDatasSauceValid(req);
   if (isDatasSauceIsGood) {
     const { id } = req.params;
     const hasNewImage = req.file != null;
@@ -115,8 +116,9 @@ function modifySauce(req, res) {
       .then((sauce) => sendResponseToClient(sauce, res))
       .then((sauce) => deteleImage(sauce))
       .catch((err) => res.status(500).send(err));
-  } else
-    res.status(400).send({ message: "data for update sauce is not valid" });
+  } else {
+    res.status(400).send({ message: "data for modify sauce is not valid" });
+  }
 }
 
 //  fabrication du payLoad
@@ -128,26 +130,28 @@ function makePayload(hasNewImage, req) {
   return payLoad;
 }
 
-function isDatasSauceValid(req, res) {
+function isDatasSauceValid(req) {
   const sauceReq = JSON.parse(req.body.sauce);
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
-  const isNameValid = name.length > 0;
-  const isManufacturerValid = manufacturer.length > 0;
-  const isDescriptionValid = description.length > 0;
-  const isMainPepperValid = mainPepper.length > 0;
-  const isHeatValid = heat > 0;
+  const isNameValid = isDataLenghtPositive(name);
+  const isManufacturerValid = isDataLenghtPositive(manufacturer);
+  const isDescriptionValid = isDataLenghtPositive(description);
+  const isMainPepperValid = isDataLenghtPositive(mainPepper);
+  const isHeatValid = heat >= 1 && heat <= 10;
   const isUserIdValid = userId.length == 24;
-  if (
+  return (
     isNameValid &&
     isManufacturerValid &&
     isDescriptionValid &&
     isMainPepperValid &&
     isHeatValid &&
     isUserIdValid
-  )
-    return true;
-  return false;
+  );
+}
+
+function isDataLenghtPositive(data) {
+  return data.length > 0;
 }
 
 //  like & dislike
@@ -209,10 +213,9 @@ async function likeSauce(req, res) {
   }
 }
 
-// envoyer la réponse au client
+// envoyer la réponse au client pour les routes de modification et de suppression
 function sendResponseToClient(sauce, res) {
   if (sauce === null) {
-    console.log("object not found in database");
     return res.status(404).send({ message: "object not found in database" });
   }
   return Promise.resolve(
