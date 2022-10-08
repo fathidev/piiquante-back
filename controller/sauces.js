@@ -18,7 +18,7 @@ const sauceSchema = new mongoose.Schema({
 const Sauce = mongoose.model("Sauce", sauceSchema);
 
 // récupérer toutes les sauces
-function getSauces(req, res) {
+function getSauces(_, res) {
   Sauce.find({})
     .then((sauces) => res.status(200).send(sauces))
     .catch((error) => res.status(500).send(error));
@@ -49,21 +49,21 @@ async function deleteSauce(req, res) {
   const { id } = req.params;
   try {
     const sauce = await Sauce.findByIdAndDelete(id);
-    await deleteImageSauce(sauce);
+    await deleteImage(sauce);
     sendResponseToClient(sauce, res);
     return sauce;
   } catch (err) {
     res.status(500).send({ message: "sauce not deleted from database", err });
   }
 }
-// supprimer l'image d'une sauce
-function deleteImageSauce(sauce) {
-  const { imageUrl } = sauce;
-  const imageToDelete = imageUrl.split("/").at(-1);
-  console.log("imageToDelete : ", imageToDelete);
-  // retourne la promesse de unlink qui est censée supprimer l'image
-  // envoie la sauce au lieu de undefined prévu nativement grâce au .then(() => sauce)
-  return unlink(`public/images/${imageToDelete}`).then(() => sauce);
+
+// supprimer l'ancienne image après avoir modifié la fiche sauce ou si supp sauce
+function deleteImage(sauce) {
+  if (sauce == null) return;
+  const imageToDelete = sauce.imageUrl.split("/").at(-1);
+  return unlink(`public/images/${imageToDelete}`)
+    .then(() => console.log("Image deleted : ", imageToDelete))
+    .catch((err) => console.error("Image not deleted : ", err));
 }
 
 // créer une sauce
@@ -72,18 +72,17 @@ function createSauce(req, res) {
   const sauceReq = JSON.parse(req.body.sauce);
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
-
   if (isDatasSauceIsGood) {
     const imageUrl =
       process.env.PATH_RESSOURCE_URL + req.file.destination + req.file.filename;
     const sauce = new Sauce({
-      userId: userId,
-      name: name,
-      manufacturer: manufacturer,
-      description: description,
-      mainPepper: mainPepper,
-      imageUrl: imageUrl,
-      heat: heat,
+      userId,
+      name,
+      manufacturer,
+      description,
+      mainPepper,
+      imageUrl,
+      heat,
       likes: 0,
       dislikes: 0,
       usersLiked: [],
@@ -106,18 +105,21 @@ function createSauce(req, res) {
   }
 }
 // modifier une sauce
-function modifySauce(req, res) {
+async function modifySauce(req, res) {
   const isDatasSauceIsGood = isDatasSauceValid(req);
-  if (isDatasSauceIsGood) {
-    const { id } = req.params;
-    const hasNewImage = req.file != null;
-    const payLoad = makePayload(hasNewImage, req);
-    Sauce.findByIdAndUpdate(id, payLoad)
-      .then((sauce) => sendResponseToClient(sauce, res))
-      .then((sauce) => deteleImage(sauce))
-      .catch((err) => res.status(500).send(err));
-  } else {
-    res.status(400).send({ message: "data for modify sauce is not valid" });
+  if (!isDatasSauceIsGood)
+    return res
+      .status(400)
+      .send({ message: "data for create sauce is not valid" });
+  const { id } = req.params;
+  const hasNewImage = req.file != null;
+  const payLoad = makePayload(hasNewImage, req);
+  try {
+    const oldSauce = await Sauce.findByIdAndUpdate(id, payLoad);
+    if (hasNewImage) await deleteImage(oldSauce);
+    sendResponseToClient(oldSauce, res);
+  } catch (err) {
+    res.status(500).send(err);
   }
 }
 
@@ -130,24 +132,29 @@ function makePayload(hasNewImage, req) {
   return payLoad;
 }
 
+// verification des données de la sauce
 function isDatasSauceValid(req) {
-  const sauceReq = JSON.parse(req.body.sauce);
+  const hasNewImage = req.file != null;
+  const sauceReq = hasNewImage ? JSON.parse(req.body.sauce) : req.body;
+
   const { name, manufacturer, description, mainPepper, heat, userId } =
     sauceReq;
-  const isNameValid = isDataLenghtPositive(name);
-  const isManufacturerValid = isDataLenghtPositive(manufacturer);
-  const isDescriptionValid = isDataLenghtPositive(description);
-  const isMainPepperValid = isDataLenghtPositive(mainPepper);
   const isHeatValid = heat >= 1 && heat <= 10;
-  const isUserIdValid = userId.length == 24;
-  return (
-    isNameValid &&
-    isManufacturerValid &&
-    isDescriptionValid &&
-    isMainPepperValid &&
-    isHeatValid &&
-    isUserIdValid
-  );
+  const isUserIdValid = userId.length === 24;
+  const [
+    isNameValid,
+    isManufacturerValid,
+    isDescriptionValid,
+    isMainPepperValid,
+  ] = [name, manufacturer, description, mainPepper].map(isDataLenghtPositive);
+  return [
+    isNameValid,
+    isManufacturerValid,
+    isDescriptionValid,
+    isMainPepperValid,
+    isHeatValid,
+    isUserIdValid,
+  ].every((value) => value === true);
 }
 
 function isDataLenghtPositive(data) {
@@ -214,27 +221,15 @@ async function likeSauce(req, res) {
 }
 
 // envoyer la réponse au client pour les routes de modification et de suppression
-function sendResponseToClient(sauce, res) {
-  if (sauce === null) {
+async function sendResponseToClient(sauce, res) {
+  if (sauce == null) {
     return res.status(404).send({ message: "object not found in database" });
   }
-  return Promise.resolve(
-    res.status(200).send({ message: "successfull : object update in database" })
-  ).then(() => sauce);
+  await res.status(200).send({
+    message: "successfull : object update in database",
+    sauce: sauce,
+  });
 }
-
-// supprimer l'ancienne image après avoir modifié la fiche sauce
-function deteleImage(sauce) {
-  if (sauce === null) return;
-  const imageToDelete = sauce.imageUrl.split("/").at(-1);
-  unlink(`public/images/${imageToDelete}`)
-    .then(() => console.log("Image deleted : ", imageToDelete))
-    .catch((err) => console.error("Image not deleted : ", err));
-}
-
-// Sauce.deleteMany({}).then(() =>
-//   console.log("suppression de toutes les sauces de la db OK")
-// );
 
 module.exports = {
   createSauce,

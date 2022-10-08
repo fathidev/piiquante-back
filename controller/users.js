@@ -5,8 +5,9 @@ const jwt = require("jsonwebtoken");
 // creation du user
 async function createUser(req, res) {
   const { email, password } = req.body;
-  if (email == "" || password == "") {
-    return res
+
+  if([email, password].includes("")) {
+     return res
       .status(203)
       .send({ message: "password or email can not be empty" });
   }
