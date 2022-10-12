@@ -1,16 +1,18 @@
 const mongoose = require("mongoose");
-const unlink = require("fs").promises.unlink;
+const {
+  promises: { unlink },
+} = require("fs");
 
 const sauceSchema = new mongoose.Schema({
-  userId: String,
-  name: String,
-  manufacturer: String,
-  description: String,
-  mainPepper: String,
-  imageUrl: String,
-  heat: Number,
-  likes: Number,
-  dislikes: Number,
+  userId: { type: String, required: [true, "user id is required"] },
+  name: { type: String, required: [true, "name is required"] },
+  manufacturer: { type: String, required: [true, "manufacturer is required"] },
+  description: { type: String, required: [true, "description is required"] },
+  mainPepper: { type: String, required: [true, "mainPepper is required"] },
+  imageUrl: { type: String, required: [true, "imageUrl is required"] },
+  heat: { type: Number, required: [true, "heat is required"] },
+  likes: { type: Number, default: 0 },
+  dislikes: { type: Number, default: 0 },
   usersLiked: [String],
   usersDisliked: [String],
 });
@@ -110,10 +112,12 @@ async function modifySauce(req, res) {
   if (!isDatasSauceIsGood)
     return res
       .status(400)
-      .send({ message: "data for create sauce is not valid" });
+      .send({ message: "datas for modify sauce is not valid" });
+
   const { id } = req.params;
   const hasNewImage = req.file != null;
   const payLoad = makePayload(hasNewImage, req);
+
   try {
     const oldSauce = await Sauce.findByIdAndUpdate(id, payLoad);
     if (hasNewImage) await deleteImage(oldSauce);
@@ -141,17 +145,8 @@ function isDatasSauceValid(req) {
     sauceReq;
   const isHeatValid = heat >= 1 && heat <= 10;
   const isUserIdValid = userId.length === 24;
-  const [
-    isNameValid,
-    isManufacturerValid,
-    isDescriptionValid,
-    isMainPepperValid,
-  ] = [name, manufacturer, description, mainPepper].map(isDataLenghtPositive);
   return [
-    isNameValid,
-    isManufacturerValid,
-    isDescriptionValid,
-    isMainPepperValid,
+    ...[name, manufacturer, description, mainPepper].map(isDataLenghtPositive),
     isHeatValid,
     isUserIdValid,
   ].every((value) => value === true);
